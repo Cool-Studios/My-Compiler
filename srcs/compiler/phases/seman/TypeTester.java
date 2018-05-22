@@ -1,0 +1,125 @@
+package compiler.phases.seman;
+
+import common.report.Report;
+import compiler.phases.abstr.AbsVisitor;
+import compiler.phases.abstr.abstree.*;
+import compiler.phases.seman.type.SemArrType;
+import compiler.phases.seman.type.SemPtrType;
+import compiler.phases.seman.type.SemRecType;
+import compiler.phases.seman.type.SemType;
+
+
+/**
+ * Tests whether types constructed by {@link TypeDefiner} make sense.
+ *
+ * @author sliva
+ */
+public class TypeTester implements AbsVisitor<Object, Object> {
+
+
+
+    public Object visit(AbsArrType node, Object visArg) {
+        node.elemType.accept(this, null);
+        SemType arrType = SemAn.descType().get(node);
+
+        if (arrType == null || !arrType.isAKindOf(SemArrType.class)) {
+            throw new Report.Error(node.location(), "Semantic array was not found");
+        }
+        return null;
+    }
+
+    public Object visit(AbsAtomType node, Object visArg) {
+        SemType atomType = SemAn.descType().get(node);
+
+        if (atomType == null) {
+            throw new Report.Error(node.location(), "Semantic atom was not found");
+        }
+        return null;
+    }
+
+    public Object visit(AbsPtrType node, Object visArg) {
+        node.subType.accept(this, null);
+        SemType ptrType = SemAn.descType().get(node);
+
+        if (ptrType == null || !ptrType.isAKindOf(SemPtrType.class)) {
+            throw new Report.Error(node.location(), "Semantic pointer was not found");
+        }
+        return null;
+    }
+
+    public Object visit(AbsRecType node, Object visArg) {
+        node.compDecls.accept(this, null);
+        SemType recType = SemAn.descType().get(node);
+
+        if (recType == null || !recType.isAKindOf(SemRecType.class)) {
+            throw new Report.Error(node.location(), "Semantic record was not found");
+        }
+        return null;
+    }
+
+    public Object visit(AbsTypeName node, Object visArg) {
+        SemType namedType = SemAn.descType().get(node);
+        node.accept(new TypeDefiner(), null);
+
+        if (namedType == null) {
+            throw new Report.Error(node.location(), "Semantic named was not found");
+        }
+
+        return null;
+    }
+
+
+    public Object visit(AbsDecls node, Object visArg) {
+        for (AbsDecl decl : node.decls()) {
+            decl.accept(this, visArg);
+        }
+
+        return null;
+    }
+
+    public Object visit(AbsTypeDecl node, Object visArg) {
+        return node.type.accept(this, null);
+    }
+
+    public Object visit(AbsCompDecl node, Object visArg) {
+        return node.type.accept(this, null);
+    }
+
+    public Object visit(AbsCompDecls node, Object visArg) {
+        for (AbsCompDecl compDecl : node.compDecls()) {
+            compDecl.accept(this, null);
+        }
+        return null;
+    }
+
+    public Object visit(AbsFunDecl node, Object visArg) {
+        node.type.accept(this, null);
+        node.parDecls.accept(this, null);
+        return null;
+    }
+
+    public Object visit(AbsFunDef node, Object visArg) {
+        node.type.accept(this, null);
+        node.parDecls.accept(this, null);
+        node.value.accept((TypeChecker) visArg, null);
+
+        return null;
+    }
+
+    public Object visit(AbsParDecl node, Object visArg) {
+        return node.type.accept(this, null);
+    }
+
+    public Object visit(AbsParDecls node, Object visArg) {
+        for (AbsParDecl parDecl : node.parDecls()) {
+            parDecl.accept(this, null);
+        }
+        return null;
+    }
+
+    public Object visit(AbsVarDecl node, Object visArg) {
+        return node.type.accept(this, null);
+    }
+
+
+}
